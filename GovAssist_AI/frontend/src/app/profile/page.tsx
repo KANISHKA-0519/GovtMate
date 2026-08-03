@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAppAuth as useUser } from "@/hooks/useAppAuth";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
@@ -163,7 +163,7 @@ export default function ProfilePage() {
                   <Input label="Date of Birth" type="date" value={form.dateOfBirth} onChange={set("dateOfBirth")} icon={<Calendar className="w-4 h-4" />} />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Gender</label>
-                    <select value={form.gender} onChange={set("gender")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
+                    <select suppressHydrationWarning value={form.gender} onChange={set("gender")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
                       <option value="">Select gender</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
@@ -189,7 +189,7 @@ export default function ProfilePage() {
                   <Input label="District" placeholder="Your district" value={form.district} onChange={set("district")} icon={<Building className="w-4 h-4" />} />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">State</label>
-                    <select value={form.state} onChange={set("state")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
+                    <select suppressHydrationWarning value={form.state} onChange={set("state")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
                       <option value="">Select state</option>
                       {STATES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -206,7 +206,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Category</label>
-                    <select value={form.category} onChange={set("category")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
+                    <select suppressHydrationWarning value={form.category} onChange={set("category")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
                       <option value="">Select category</option>
                       <option value="general">General</option>
                       <option value="obc">OBC</option>
@@ -219,7 +219,7 @@ export default function ProfilePage() {
                   <Input label="Occupation" placeholder="e.g. Farmer, Teacher" value={form.occupation} onChange={set("occupation")} icon={<Briefcase className="w-4 h-4" />} />
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Education</label>
-                    <select value={form.education} onChange={set("education")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
+                    <select suppressHydrationWarning value={form.education} onChange={set("education")} className="w-full h-10 rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-3 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-[#8EC5FC]">
                       <option value="">Select education</option>
                       <option value="no_formal">No Formal Education</option>
                       <option value="primary">Primary School</option>

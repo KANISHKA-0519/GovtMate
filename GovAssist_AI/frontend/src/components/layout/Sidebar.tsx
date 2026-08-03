@@ -25,14 +25,23 @@ const adminItems = [
   { href: "/admin", label: "Admin Panel", icon: Shield },
 ];
 
+import { useState, useEffect } from "react";
+
 export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen } = useAppStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isOpen = mounted ? sidebarOpen : true;
   const items = isAdmin ? [...navItems, ...adminItems] : navItems;
 
   return (
     <motion.aside
-      animate={{ width: sidebarOpen ? 240 : 72 }}
+      animate={{ width: isOpen ? 240 : 72 }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
       className="fixed left-0 top-0 h-full bg-white dark:bg-gray-900 border-r border-[#E5E7EB] dark:border-gray-700 z-40 flex flex-col overflow-hidden"
     >
@@ -42,7 +51,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
           <Sparkles className="w-5 h-5 text-white" />
         </div>
         <AnimatePresence>
-          {sidebarOpen && (
+          {isOpen && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <p className="font-bold text-gray-900 dark:text-gray-100 text-sm leading-tight">GovAssist</p>
               <p className="text-xs text-gray-500">AI Platform</p>
@@ -53,9 +62,9 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
 
       {/* Nav */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-hide">
-        <Link href="/" className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group", !sidebarOpen && "justify-center")}>
+        <Link href="/" className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group", !isOpen && "justify-center")}>
           <Home className="w-5 h-5 flex-shrink-0" />
-          {sidebarOpen && <span className="text-sm font-medium">Home</span>}
+          {isOpen && <span className="text-sm font-medium">Home</span>}
         </Link>
         {items.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
@@ -68,7 +77,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
                 active
                   ? "bg-gradient-to-r from-[#8EC5FC]/20 to-[#E0C3FC]/20 text-gray-900 dark:text-gray-100"
                   : "text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100",
-                !sidebarOpen && "justify-center"
+                !isOpen && "justify-center"
               )}
             >
               {active && (
@@ -78,7 +87,7 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
                 />
               )}
               <Icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="text-sm font-medium">{label}</span>}
+              {isOpen && <span className="text-sm font-medium">{label}</span>}
             </Link>
           );
         })}
@@ -88,9 +97,10 @@ export function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
       <div className="p-3 border-t border-[#E5E7EB] dark:border-gray-700">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
+          suppressHydrationWarning
           className="w-full flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
         >
-          {sidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          {isOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
         </button>
       </div>
     </motion.aside>

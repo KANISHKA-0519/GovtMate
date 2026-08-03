@@ -1,8 +1,9 @@
 "use client";
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -100,11 +101,37 @@ const DEFAULT_DOCS = [
 
 function UploadContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const serviceId = searchParams.get("service") || "";
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [selectedService, setSelectedService] = useState(serviceId);
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
+
+  const { data: existingDocsData } = useQuery({
+    queryKey: ["documents"],
+    queryFn: () => documentService.getAll(),
+  });
+
+  useEffect(() => {
+    if (existingDocsData?.data) {
+      const docs = existingDocsData.data as Record<string, unknown>[];
+      const loadedFiles: UploadedFile[] = docs.map((d) => ({
+        id: String(d.id || Math.random()),
+        file: new File([], String(d.name || "document")),
+        type: String(d.type || "other"),
+        status: "verified" as const,
+        progress: 100,
+        documentId: String(d.id),
+        preview: String(d.url || ""),
+      }));
+      setFiles((prev) => {
+        const existingIds = new Set(prev.map((f) => f.documentId || f.id));
+        const newAdditions = loadedFiles.filter((f) => !existingIds.has(f.documentId) && !existingIds.has(f.id));
+        return [...prev, ...newAdditions];
+      });
+    }
+  }, [existingDocsData]);
 
   const requiredDocs = selectedService
     ? (SERVICE_REQUIRED_DOCS[selectedService] || DEFAULT_DOCS)
@@ -202,6 +229,9 @@ function UploadContent() {
       }
       toast({ title: "Application submitted!", description: "AI agents are processing your documents.", type: "success" });
       setFiles([]);
+      setTimeout(() => {
+        router.push("/applications");
+      }, 1000);
     } catch {
       toast({ title: "Submission failed", description: "Please try again.", type: "error" });
     } finally {
@@ -223,6 +253,7 @@ function UploadContent() {
               {GOVERNMENT_SERVICES.map((svc) => (
                 <motion.button
                   key={svc.id}
+                  suppressHydrationWarning
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => { setSelectedService(svc.id); setFiles([]); }}
@@ -384,7 +415,7 @@ function UploadContent() {
                         {f.status === "verified" && <CheckCircle className="w-5 h-5 text-green-500" />}
                         {f.status === "error" && <AlertCircle className="w-5 h-5 text-red-500" />}
                       </div>
-                      <button onClick={() => removeFile(f.id)} className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                      <button suppressHydrationWarning onClick={() => removeFile(f.id)} className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
                         <X className="w-4 h-4" />
                       </button>
                     </motion.div>

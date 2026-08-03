@@ -51,6 +51,7 @@ export default function ApplicationsPage() {
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
+                  suppressHydrationWarning
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search applications..."
@@ -61,6 +62,7 @@ export default function ApplicationsPage() {
                 {STATUS_FILTERS.map((s) => (
                   <button
                     key={s}
+                    suppressHydrationWarning
                     onClick={() => setStatusFilter(s)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all capitalize ${
                       statusFilter === s

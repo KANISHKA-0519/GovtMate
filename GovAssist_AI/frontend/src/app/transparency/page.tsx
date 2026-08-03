@@ -153,23 +153,27 @@ function ApplicationDetail({ appId }: { appId: string }) {
           <CardHeader><CardTitle>AI Agent Workflow</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {app.workflowStage.stages.map((stage, i) => (
-                <motion.div
-                  key={stage.id}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className={`p-4 rounded-xl border-2 text-center ${
-                    stage.status === "completed" ? "border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800" :
-                    stage.status === "active" ? "border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800" :
-                    "border-[#E5E7EB] dark:border-gray-700"
-                  }`}
-                >
-                  <div className="flex justify-center mb-2">{STAGE_ICONS[stage.status] || STAGE_ICONS.pending}</div>
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{stage.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 capitalize">{stage.status}</p>
-                </motion.div>
-              ))}
+              {app.workflowStage.stages.map((stage, i) => {
+                const isFinalState = app.status === "approved" || app.status === "completed";
+                const stageStatus = isFinalState ? "completed" : stage.status;
+                return (
+                  <motion.div
+                    key={stage.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    className={`p-4 rounded-xl border-2 text-center ${
+                      stageStatus === "completed" ? "border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800" :
+                      stageStatus === "active" ? "border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800" :
+                      "border-[#E5E7EB] dark:border-gray-700"
+                    }`}
+                  >
+                    <div className="flex justify-center mb-2">{STAGE_ICONS[stageStatus] || STAGE_ICONS.pending}</div>
+                    <p className="text-xs font-medium text-gray-700 dark:text-gray-300">{stage.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 capitalize">{stageStatus}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

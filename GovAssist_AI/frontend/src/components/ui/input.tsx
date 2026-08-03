@@ -16,6 +16,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           type={type}
           ref={ref}
+          suppressHydrationWarning
           className={cn(
             "flex h-10 w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8EC5FC] focus:border-transparent transition-all dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100 dark:placeholder:text-gray-500",
             icon && "pl-10",
@@ -37,6 +38,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
       {label && <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>}
       <textarea
         ref={ref}
+        suppressHydrationWarning
         className={cn(
           "flex min-h-[80px] w-full rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#8EC5FC] focus:border-transparent transition-all resize-none dark:bg-gray-800 dark:border-gray-600 dark:text-gray-100",
           error && "border-red-400",

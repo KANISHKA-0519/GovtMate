@@ -136,7 +136,31 @@ async def get_all_citizens(
             result.append(u)
 
         return {"success": True, "data": result, "total": total, "page": page, "limit": limit}
-    return {"success": True, "data": [], "total": 0, "page": 1, "limit": limit}
+
+    from routes.users import _mock_users_db
+    from routes.applications import _mock_all_apps
+
+    users_list = list(_mock_users_db.values())
+    if not users_list:
+        users_list = [{
+            "id": "user_demo_citizen_123",
+            "clerkId": "user_demo_citizen_123",
+            "name": "Rahul Sharma",
+            "email": "rahul.sharma@example.com",
+            "role": "citizen",
+            "profileCompleted": True,
+            "createdAt": datetime.utcnow().isoformat(),
+        }]
+
+    result = []
+    for u in users_list:
+        u_dict = _serialize(dict(u))
+        uid = u_dict.get("clerkId", u_dict.get("id", ""))
+        app_count = len([a for a in _mock_all_apps.values() if a.get("userId") == uid])
+        u_dict["totalApplications"] = app_count
+        result.append(u_dict)
+
+    return {"success": True, "data": result, "total": len(result), "page": page, "limit": limit}
 
 
 @router.get("/citizens/{citizen_id}")
@@ -151,7 +175,24 @@ async def get_citizen_profile(citizen_id: str, admin_id: str = Depends(get_admin
         apps = await db.applications.find({"userId": uid}).sort("createdAt", -1).to_list(length=50)
         user["applications"] = [_serialize(a) for a in apps]
         return {"success": True, "data": user}
-    raise HTTPException(status_code=404, detail="Citizen not found")
+
+    from routes.users import _mock_users_db
+    from routes.applications import _mock_all_apps
+
+    user = _mock_users_db.get(citizen_id)
+    if not user:
+        for u in _mock_users_db.values():
+            if u.get("id") == citizen_id or u.get("clerkId") == citizen_id:
+                user = u
+                break
+    if not user:
+        user = {"id": "user_demo_citizen_123", "clerkId": "user_demo_citizen_123", "name": "Rahul Sharma", "email": "rahul.sharma@example.com", "role": "citizen", "profileCompleted": True}
+
+    user = _serialize(dict(user))
+    uid = user.get("clerkId", user.get("id", ""))
+    apps = [a for a in _mock_all_apps.values() if a.get("userId") == uid]
+    user["applications"] = [_serialize(dict(a)) for a in apps]
+    return {"success": True, "data": user}
 
 
 @router.get("/applications")
@@ -183,7 +224,26 @@ async def get_all_applications(
             result.append(app)
 
         return {"success": True, "data": result, "total": total}
-    return {"success": True, "data": [], "total": 0}
+
+    from routes.applications import _mock_all_apps
+    from routes.users import _mock_users_db
+
+    apps_list = list(_mock_all_apps.values())
+    if status and status != "all":
+        apps_list = [a for a in apps_list if a.get("status") == status]
+    if search:
+        s = search.lower()
+        apps_list = [a for a in apps_list if s in str(a.get("serviceName", "")).lower() or s in str(a.get("id", "")).lower()]
+
+    result = []
+    for app in apps_list:
+        app_dict = _serialize(dict(app))
+        user = _mock_users_db.get(app_dict.get("userId", ""))
+        app_dict["citizenName"] = user.get("name", user.get("fullName", "Rahul Sharma")) if user else "Rahul Sharma"
+        app_dict["citizenEmail"] = user.get("email", "rahul.sharma@example.com") if user else "rahul.sharma@example.com"
+        result.append(app_dict)
+
+    return {"success": True, "data": result, "total": len(result)}
 
 
 @router.get("/applications/{app_id}")
@@ -203,7 +263,20 @@ async def get_application_detail(app_id: str, admin_id: str = Depends(get_admin_
         app["documents"] = docs_list
 
         return {"success": True, "data": app}
-    raise HTTPException(status_code=404, detail="Application not found")
+
+    from routes.applications import _mock_all_apps
+    from routes.users import _mock_users_db
+    from routes.documents import _mock_documents_db
+
+    app = _mock_all_apps.get(app_id)
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app_dict = _serialize(dict(app))
+    user = _mock_users_db.get(app_dict.get("userId", ""))
+    docs = _mock_documents_db.get(app_dict.get("userId", ""), [])
+    app_dict["citizen"] = _serialize(dict(user)) if user else {"name": "Rahul Sharma", "email": "rahul.sharma@example.com"}
+    app_dict["documents"] = [_serialize(dict(d)) for d in docs]
+    return {"success": True, "data": app_dict}
 
 
 @router.put("/applications/{app_id}/status")
@@ -258,6 +331,19 @@ async def update_application_status(
 
         updated = await db.applications.find_one({"id": app_id})
         return {"success": True, "data": _serialize(updated)}
+
+    from routes.applications import _mock_all_apps
+    if app_id in _mock_all_apps:
+        _mock_all_apps[app_id]["status"] = new_status
+        _mock_all_apps[app_id]["updatedAt"] = datetime.utcnow()
+        if officer:
+            _mock_all_apps[app_id]["assignedOfficer"] = officer
+        if new_status in ["approved", "completed"]:
+            wf = _mock_all_apps[app_id].get("workflowStage", {})
+            stages = wf.get("stages", [])
+            for s in stages:
+                s["status"] = "completed"
+            _mock_all_apps[app_id]["workflowStage"] = {"current": "completed", "stages": stages}
     return {"success": True, "data": {"id": app_id, "status": new_status}}
 
 
@@ -329,11 +415,38 @@ async def get_admin_analytics(admin_id: str = Depends(get_admin_user)):
                 "approved": x["approved"], "pending": x["pending"], "rejected": x["rejected"]} for x in dept_perf],
         }}
 
+    from routes.applications import _mock_all_apps
+    from routes.users import _mock_users_db
+
+    all_apps = list(_mock_all_apps.values())
+    total = len(all_apps)
+    approved = len([a for a in all_apps if a.get("status") == "approved"])
+    rejected = len([a for a in all_apps if a.get("status") == "rejected"])
+    pending = len([a for a in all_apps if a.get("status") in ["submitted", "under_review", "document_verification", "eligibility_verification", "scheme_recommendation", "waiting_admin_review", "admin_review"]])
+    waiting_admin = len([a for a in all_apps if a.get("status") == "waiting_admin_review"])
+    docs_required = len([a for a in all_apps if a.get("status") in ["documents_required", "additional_documents_required"]])
+    total_citizens = max(len(_mock_users_db), 1)
+
+    by_service_dict: dict[str, int] = {}
+    for a in all_apps:
+        svc = str(a.get("serviceName", "Other"))
+        by_service_dict[svc] = by_service_dict.get(svc, 0) + 1
+
+    by_service = [{"name": k, "value": v} for k, v in by_service_dict.items()]
+    approval_rate = round((approved / total * 100), 1) if total > 0 else 0
+    rejection_rate = round((rejected / total * 100), 1) if total > 0 else 0
+
     return {"success": True, "data": {
-        "total": 0, "approved": 0, "rejected": 0, "pending": 0, "under_review": 0,
-        "waiting_admin_review": 0, "additional_documents_required": 0,
-        "total_citizens": 0, "today_apps": 0, "approval_rate": 0, "rejection_rate": 0,
-        "by_service": [], "by_district": [], "monthly": [], "dept_performance": [],
+        "total": total, "approved": approved, "rejected": rejected,
+        "pending": pending, "under_review": pending,
+        "waiting_admin_review": waiting_admin,
+        "additional_documents_required": docs_required,
+        "total_citizens": total_citizens, "today_apps": total,
+        "approval_rate": approval_rate, "rejection_rate": rejection_rate,
+        "by_service": by_service,
+        "by_district": [{"name": "Bengaluru Urban", "value": total}],
+        "monthly": [{"month": datetime.utcnow().strftime("%b"), "applications": total, "approved": approved}],
+        "dept_performance": [{"name": "Revenue Department", "total": total, "approved": approved, "pending": pending, "rejected": rejected}],
     }}
 
 
@@ -341,12 +454,10 @@ async def get_admin_analytics(admin_id: str = Depends(get_admin_user)):
 async def get_admin_notifications(admin_id: str = Depends(get_admin_user)):
     db = get_db()
     if db is not None:
-        # Recent registrations
         recent_users = await db.users.find({"role": "citizen"}).sort("createdAt", -1).limit(5).to_list(5)
         recent_apps = await db.applications.find({}).sort("createdAt", -1).limit(5).to_list(5)
         pending_count = await db.applications.count_documents({"status": {"$in": ["submitted", "under_review", "document_verification", "eligibility_verification", "waiting_admin_review", "admin_review"]}})
         waiting_admin_count = await db.applications.count_documents({"status": "waiting_admin_review"})
-        rejected_count = await db.applications.count_documents({"status": "rejected"})
 
         notifications = []
         for u in recent_users:
@@ -370,13 +481,16 @@ async def get_admin_notifications(admin_id: str = Depends(get_admin_user)):
                 "message": f"{waiting_admin_count} applications waiting for admin review",
                 "time": datetime.utcnow().isoformat(),
             })
-        if pending_count > 0:
-            notifications.append({
-                "id": "pending_alert", "type": "alert",
-                "title": "Pending Reviews",
-                "message": f"{pending_count} applications awaiting review",
-                "time": datetime.utcnow().isoformat(),
-            })
-
         return {"success": True, "data": notifications}
-    return {"success": True, "data": []}
+
+    from routes.applications import _mock_all_apps
+    all_apps = list(_mock_all_apps.values())
+    notifications = []
+    for a in all_apps[:5]:
+        notifications.append({
+            "id": f"notif_{a.get('id')}", "type": "application",
+            "title": "New Application Submitted",
+            "message": f"{a.get('serviceName', 'Application')} received and awaiting review",
+            "time": datetime.utcnow().isoformat(),
+        })
+    return {"success": True, "data": notifications}

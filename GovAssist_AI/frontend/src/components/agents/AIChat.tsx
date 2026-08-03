@@ -70,6 +70,7 @@ export function AIChat() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setOpen(true)}
+        suppressHydrationWarning
         className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8EC5FC] to-[#E0C3FC] shadow-lg flex items-center justify-center text-white"
       >
         <Sparkles className="w-6 h-6" />
@@ -94,10 +95,10 @@ export function AIChat() {
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <button onClick={() => setMinimized(!minimized)} className="p-1 text-white/80 hover:text-white">
+                <button suppressHydrationWarning onClick={() => setMinimized(!minimized)} className="p-1 text-white/80 hover:text-white">
                   {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
                 </button>
-                <button onClick={() => setOpen(false)} className="p-1 text-white/80 hover:text-white">
+                <button suppressHydrationWarning onClick={() => setOpen(false)} className="p-1 text-white/80 hover:text-white">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -143,7 +144,7 @@ export function AIChat() {
                   {messages.length === 1 && (
                     <div className="px-4 pb-2 flex flex-wrap gap-1.5">
                       {SUGGESTIONS.map((s) => (
-                        <button key={s} onClick={() => sendMessage(s)}
+                        <button key={s} suppressHydrationWarning onClick={() => sendMessage(s)}
                           className="text-xs bg-[#D6EEFF] dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-2.5 py-1 hover:bg-[#8EC5FC]/30 transition-colors">
                           {s}
                         </button>
@@ -154,6 +155,7 @@ export function AIChat() {
                   {/* Input */}
                   <div className="p-4 border-t border-[#E5E7EB] dark:border-gray-700 flex gap-2">
                     <input
+                      suppressHydrationWarning
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && sendMessage()}

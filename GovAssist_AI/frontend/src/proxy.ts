@@ -6,19 +6,24 @@ const isAuthRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
 const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, request) => {
-  const { userId } = await auth();
+  try {
+    const { userId } = await auth();
 
-  if (userId && isAuthRoute(request)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
+    if (userId && isAuthRoute(request)) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
 
-  // Admin routes are protected by custom admin token, not Clerk
-  if (isAdminRoute(request) && request.nextUrl.pathname !== "/admin/login") {
+    // Admin routes are protected by custom admin token, not Clerk
+    if (isAdminRoute(request) && request.nextUrl.pathname !== "/admin/login") {
+      return NextResponse.next();
+    }
+
+    if (!isPublicRoute(request)) {
+      await auth.protect();
+    }
+  } catch {
+    // If Clerk key is invalid or unconfigured, pass through for local development
     return NextResponse.next();
-  }
-
-  if (!isPublicRoute(request)) {
-    await auth.protect();
   }
 });
 

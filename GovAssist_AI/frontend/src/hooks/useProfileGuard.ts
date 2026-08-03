@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAppAuth } from "@/hooks/useAppAuth";
 import { useRouter, usePathname } from "next/navigation";
 import { setAuthToken } from "@/lib/api";
 import { userService } from "@/services/api";
 
 export function useProfileGuard(options?: { skip?: boolean }) {
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAppAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [profileChecked, setProfileChecked] = useState(false);
@@ -37,16 +37,10 @@ export function useProfileGuard(options?: { skip?: boolean }) {
 
         if (cancelled) return;
 
-        const completed = !!userData?.profileCompleted;
+        const completed = userData?.profileCompleted !== undefined ? !!userData.profileCompleted : true;
         setProfileCompleted(completed);
-
-        if (!completed && pathname !== "/profile") {
-          router.replace("/profile");
-        }
       } catch {
-        if (!cancelled && pathname !== "/profile") {
-          router.replace("/profile");
-        }
+        if (!cancelled) setProfileCompleted(true);
       } finally {
         if (!cancelled) setProfileChecked(true);
       }

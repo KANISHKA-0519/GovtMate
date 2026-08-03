@@ -35,7 +35,7 @@ class UserUpdate(BaseModel):
     address: Optional[str] = None
     dateOfBirth: Optional[str] = None
     gender: Optional[str] = None
-    category: Optional[Category] = None
+    category: Optional[str] = None
     annualIncome: Optional[float] = None
     state: Optional[str] = None
     district: Optional[str] = None

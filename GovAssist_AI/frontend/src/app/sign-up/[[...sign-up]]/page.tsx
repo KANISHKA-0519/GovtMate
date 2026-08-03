@@ -7,6 +7,10 @@ import { Shield, User, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { adminService } from "@/services/api";
 import { setAdminToken } from "@/lib/api";
 
+import { isClerkLive, DEFAULT_MOCK_USER } from "@/hooks/useAppAuth";
+import { setAuthToken } from "@/lib/api";
+import { userService } from "@/services/api";
+
 export default function SignUpPage() {
   const [role, setRole] = useState<"citizen" | "admin">("citizen");
 
@@ -15,6 +19,37 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleCitizenMockSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const citizenEmail = email || DEFAULT_MOCK_USER.primaryEmailAddress.emailAddress;
+      const citizenName = citizenEmail.split("@")[0].replace(".", " ");
+      const clerkId = "user_" + citizenEmail.replace(/[^a-zA-Z0-9]/g, "_");
+      const mockUserData = {
+        id: clerkId,
+        fullName: citizenName.charAt(0).toUpperCase() + citizenName.slice(1),
+        firstName: citizenName.split(" ")[0].charAt(0).toUpperCase() + citizenName.split(" ")[0].slice(1),
+        primaryEmailAddress: { emailAddress: citizenEmail },
+      };
+
+      setAuthToken(clerkId);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("govassist_mock_user", JSON.stringify(mockUserData));
+      }
+
+      await userService.sync({
+        clerkId: clerkId,
+        name: mockUserData.fullName,
+        email: citizenEmail,
+      }).catch(() => null);
+
+      window.location.href = "/dashboard";
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,20 +119,61 @@ export default function SignUpPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
           >
-            <SignUp
-              appearance={{
-                elements: {
-                  rootBox: "w-full",
-                  card: "rounded-2xl shadow-sm border border-[#E5E7EB] bg-white dark:bg-gray-900 dark:border-gray-700",
-                  headerTitle: "text-gray-900 dark:text-gray-100 font-semibold",
-                  headerSubtitle: "text-gray-500 dark:text-gray-400",
-                  formButtonPrimary: "bg-gradient-to-r from-[#8EC5FC] to-[#E0C3FC] text-gray-800 hover:opacity-90 rounded-xl",
-                  formFieldInput:
-                    "rounded-xl border-[#E5E7EB] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 focus:ring-[#8EC5FC]",
-                  footerActionLink: "text-blue-600 hover:text-blue-700",
-                },
-              }}
-            />
+            {isClerkLive ? (
+              <SignUp
+                appearance={{
+                  elements: {
+                    rootBox: "w-full",
+                    card: "rounded-2xl shadow-sm border border-[#E5E7EB] bg-white dark:bg-gray-900 dark:border-gray-700",
+                    headerTitle: "text-gray-900 dark:text-gray-100 font-semibold",
+                    headerSubtitle: "text-gray-500 dark:text-gray-400",
+                    formButtonPrimary: "bg-gradient-to-r from-[#8EC5FC] to-[#E0C3FC] text-gray-800 hover:opacity-90 rounded-xl",
+                    formFieldInput:
+                      "rounded-xl border-[#E5E7EB] dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 focus:ring-[#8EC5FC]",
+                    footerActionLink: "text-blue-600 hover:text-blue-700",
+                  },
+                }}
+              />
+            ) : (
+              <form
+                onSubmit={handleCitizenMockSignUp}
+                className="rounded-2xl shadow-sm border border-[#E5E7EB] bg-white dark:bg-gray-900 dark:border-gray-700 p-6 space-y-5"
+              >
+                <div className="text-center pb-1">
+                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#8EC5FC] to-[#E0C3FC] mb-3">
+                    <User className="w-7 h-7 text-gray-800" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Create Citizen Account</h2>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">Local Mock Mode</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="rahul.sharma@example.com"
+                    className="w-full rounded-xl border border-[#E5E7EB] dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 outline-none focus:ring-2 focus:ring-[#8EC5FC]"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-[#8EC5FC] to-[#E0C3FC] text-gray-800 font-semibold py-2.5 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2 text-sm"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <User className="w-4 h-4" />}
+                  {loading ? "Creating Account..." : "Create Account & Continue"}
+                </button>
+
+                <div className="pt-2 text-center text-xs text-gray-400">
+                  Running in offline/mock mode for instant testing without external Clerk keys.
+                </div>
+              </form>
+            )}
           </motion.div>
         ) : (
           <motion.form

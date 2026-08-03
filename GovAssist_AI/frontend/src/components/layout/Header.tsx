@@ -1,10 +1,13 @@
 "use client";
 import { useTheme } from "next-themes";
 import { UserButton } from "@clerk/nextjs";
-import { Bell, Sun, Moon, Search } from "lucide-react";
+import { Bell, Sun, Moon, Search, User as UserIcon } from "lucide-react";
 import { useAppStore } from "@/store/useAppStore";
+import { isClerkLive, useAppAuth } from "@/hooks/useAppAuth";
 import Link from "next/link";
 import { motion } from "framer-motion";
+
+import { useState, useEffect } from "react";
 
 interface HeaderProps {
   title: string;
@@ -14,6 +17,12 @@ interface HeaderProps {
 export function Header({ title, subtitle }: HeaderProps) {
   const { resolvedTheme, setTheme } = useTheme();
   const { unreadCount } = useAppStore();
+  const { user } = useAppAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-[#E5E7EB] dark:border-gray-700 flex items-center justify-between px-6 sticky top-0 z-30">
@@ -28,6 +37,7 @@ export function Header({ title, subtitle }: HeaderProps) {
           <Search className="w-4 h-4 text-gray-400" />
           <input
             placeholder="Search..."
+            suppressHydrationWarning
             className="bg-transparent text-sm text-gray-700 dark:text-gray-300 placeholder:text-gray-400 outline-none w-40"
           />
         </div>
@@ -37,8 +47,9 @@ export function Header({ title, subtitle }: HeaderProps) {
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           aria-label="Toggle theme"
+          suppressHydrationWarning
         >
-          {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          {mounted && resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
         {/* Notifications */}
@@ -55,7 +66,18 @@ export function Header({ title, subtitle }: HeaderProps) {
         </Link>
 
         {/* User */}
-        <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 rounded-xl" } }} />
+        {isClerkLive ? (
+          <UserButton appearance={{ elements: { avatarBox: "w-9 h-9 rounded-xl" } }} />
+        ) : (
+          <Link href="/profile" className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-[#E5E7EB] dark:border-gray-700">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#8EC5FC] to-[#E0C3FC] flex items-center justify-center text-gray-800 font-bold text-xs">
+              {user?.fullName ? user.fullName[0] : <UserIcon className="w-4 h-4" />}
+            </div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-200 hidden sm:inline-block pr-1">
+              {user?.fullName || "Citizen Profile"}
+            </span>
+          </Link>
+        )}
       </div>
     </header>
   );

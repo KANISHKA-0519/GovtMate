@@ -58,8 +58,10 @@ async def delete_file(public_id: str) -> bool:
 
 
 def _mock_upload(filename: str) -> dict:
+    settings = get_settings()
+    cname = settings.cloudinary_cloud_name if settings.cloudinary_cloud_name and settings.cloudinary_cloud_name != "your_cloud_name" else "demo"
     return {
-        "url": f"https://res.cloudinary.com/demo/image/upload/govassist/{filename}",
+        "url": f"https://res.cloudinary.com/{cname}/image/upload/govassist/{filename}",
         "publicId": f"govassist/{filename}",
         "format": filename.split(".")[-1] if "." in filename else "jpg",
         "size": 0,

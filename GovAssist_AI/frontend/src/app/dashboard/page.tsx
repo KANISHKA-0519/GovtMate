@@ -1,5 +1,5 @@
 "use client";
-import { useUser } from "@clerk/nextjs";
+import { useAppAuth as useUser } from "@/hooks/useAppAuth";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";

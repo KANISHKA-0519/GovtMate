@@ -30,8 +30,15 @@ export const documentService = {
     formData.append("file", file);
     formData.append("type", type);
     if (applicationId) formData.append("applicationId", applicationId);
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("govassist_token") || "user_demo_citizen_123"
+        : "user_demo_citizen_123";
     const res = await apiClient.post<ApiResponse<Document>>("/api/documents/upload", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
     });
     return res.data;
   },

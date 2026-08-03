@@ -5,6 +5,8 @@ import { Header } from "./Header";
 import { useAppStore } from "@/store/useAppStore";
 import { useProfileGuard } from "@/hooks/useProfileGuard";
 
+import { useState, useEffect } from "react";
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -16,6 +18,13 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, title, subtitle, isAdmin, skipProfileGuard }: DashboardLayoutProps) {
   const { sidebarOpen } = useAppStore();
   const { checking } = useProfileGuard({ skip: skipProfileGuard || isAdmin });
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isOpen = mounted ? sidebarOpen : true;
 
   if (checking) {
     return (
@@ -29,7 +38,7 @@ export function DashboardLayout({ children, title, subtitle, isAdmin, skipProfil
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-gray-950">
       <Sidebar isAdmin={isAdmin} />
       <motion.div
-        animate={{ marginLeft: sidebarOpen ? 240 : 72 }}
+        animate={{ marginLeft: isOpen ? 240 : 72 }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="min-h-screen flex flex-col"
       >
